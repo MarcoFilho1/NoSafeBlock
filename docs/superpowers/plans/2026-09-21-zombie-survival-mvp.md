@@ -31,10 +31,10 @@ Files: `project.godot`, `src/core/health.gd`, `src/player/weapon.gd`, `src/enemi
 
 Interfaces: `Health.damage(amount)`, `Weapon.fire()/reload()/tick(delta)`, `AgentBrain.decide(distance, alive, alerted)`, `WaveDirector.start_next()/register_spawn()/register_kill()/is_clear()`.
 
-- [ ] Testar morte única, dano negativo ignorado, recarga parcial, spam de disparos, limite de munição, estados e horda pendente usando SceneTree headless.
-- [ ] Executar `godot --headless --path . --script tests/test_rules.gd`; primeiro falha por componentes ausentes.
-- [ ] Implementar regras e rodar até saída 0 sem erros.
-- [ ] Commit `feat: add tested survival rules and Godot project`.
+- [x] Testar morte única, dano negativo ignorado, recarga parcial, spam de disparos, limite de munição, estados e horda pendente usando SceneTree headless.
+- [x] Executar `godot --headless --path . --script tests/test_rules.gd`; primeiro falha por componentes ausentes.
+- [x] Implementar regras e rodar até saída 0 sem erros.
+- [x] Commit `feat: add tested survival rules and Godot project`.
 
 ### Task 2: Mundo, jogador e agentes
 
@@ -42,10 +42,10 @@ Files: `scenes/main.tscn`, `src/world/world.gd`, `src/world/props.gd`, `src/play
 
 Interfaces: `World.spawn_points`, `World.navigation_ready`; `Player.health/weapon`, `Player.shoot_at(target)`; `Enemy.setup(player)`, `Enemy.health/brain`, `Enemy.eliminated(points)`.
 
-- [ ] Testar cena real: movimento bloqueado em parede, tiro bloqueado por prédio, tiro causa morte e pontuação única, agente contorna obstáculo e alcança jogador.
-- [ ] Implementar mundo low-poly, CharacterBody3D, física, mira, foco, animações e NavMesh.
-- [ ] Rodar testes de regras e integração; importar projeto no editor sem erros.
-- [ ] Commit `feat: add isometric world player combat and navigating agents`.
+- [x] Testar cena real: movimento bloqueado em parede, tiro bloqueado por prédio, tiro causa morte e pontuação única, agente contorna obstáculo e alcança jogador.
+- [x] Implementar mundo low-poly, CharacterBody3D, física, mira, foco, animações e NavMesh.
+- [x] Rodar testes de regras e integração; importar projeto no editor sem erros.
+- [x] Commit `feat: add isometric world player combat and navigating Walker agents`.
 
 ### Task 3: Partida completa e apresentação
 
@@ -53,16 +53,24 @@ Files: `src/systems/game.gd`, `src/ui/hud.gd`, `src/ui/reticle.gd`, `src/systems
 
 Interfaces: `Game.start_game()/show_menu()/set_paused(value)`, `Game.state/player/enemies/score/waves`; `HUD` emite `play_requested/menu_requested/resume_requested/quit_requested`; `Audio.play_cue(kind)`.
 
-- [ ] Testar início, hordas, spawn seguro, pausa, morte, reinício repetido e 30 agentes reais.
-- [ ] Implementar menu, HUD, retículo, game over, áudio e F1.
-- [ ] Executar jogo graficamente e verificar controles e legibilidade.
-- [ ] Commit `feat: complete wave survival loop menus audio and agent debug`.
+- [x] Testar início, hordas, spawn seguro, pausa, morte, reinício repetido e 30 agentes reais.
+- [x] Implementar menu, HUD, retículo, game over, áudio e F1.
+- [x] Executar jogo graficamente e verificar controles e legibilidade.
+- [x] Commit `feat: complete survival waves menus audio and gameplay regression coverage`.
 
 ### Task 4: Entrega e revisão
 
 Files: `README.md`, `CONTRIBUTING.md`, `export_presets.cfg`, `.github/workflows/validate.yml`, `docs/validation.md`.
 
-- [ ] Rodar testes headless e build macOS; abrir executável gerado.
-- [ ] Documentar uso, instalação, responsabilidades, contratos, Git Flow e resultados reais.
-- [ ] Revisão independente da branch, corrigir achados importantes com regressões.
-- [ ] `git diff --check`; commits finais; registrar status de integração sem afirmar merge não realizado.
+- [x] Rodar testes headless e build macOS; abrir executável gerado.
+- [x] Documentar uso, instalação, responsabilidades, contratos, Git Flow e resultados reais.
+- [x] Revisão independente da branch, corrigir achados importantes com regressões.
+- [x] `git diff --check`; commits finais; registrar status de integração sem afirmar merge não realizado.
+
+## Registro de execução
+
+- Engine escolhida como decisão delegada pelo usuário: Godot/GDScript, uma implementação apenas. Trocar de engine exigiria nova implementação; escolha documentada antes do código.
+- Trabalho no checkout atual em feature branch: não havia alterações rastreadas de colegas; o plano não rastreado foi preservado e versionado integralmente. Nenhuma worktree adicional ou merge automático.
+- Fundações, mundo e loop entregues em commits separados. Os testes reais de integração exigem a cena e o coordenador juntos; sua suíte acompanha o commit do loop.
+- Revisão independente: dois achados funcionais reproduzidos, corrigidos e cobertos por testes; telemetria de patrulha também corrigida. Resultado e limitações em `docs/validation.md`.
+- Integração em develop e publicação remota dependem da revisão/aprovação da equipe; não fazem parte dos commits locais de implementação.

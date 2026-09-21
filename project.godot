@@ -3,6 +3,7 @@ config_version=5
 
 [application]
 config/name="No Safe Block"
+config/icon="res://assets/icon.svg"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/description="An isometric arcade survival game about autonomous agents."
@@ -19,6 +20,7 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.035, 0.055, 0.065, 1)
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
 
 [physics]
 common/physics_ticks_per_second=60
