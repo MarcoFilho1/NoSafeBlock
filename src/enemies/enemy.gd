@@ -86,11 +86,12 @@ func _physics_process(delta: float) -> void:
 	var distance := global_position.distance_to(player.global_position)
 	if idle_left > 0:
 		return
-	brain.decide(distance, health.is_alive(), alert_time > 0)
+	var attack_visible := distance > Brain.ATTACK_RANGE or has_clear_attack()
+	brain.decide(distance, health.is_alive(), alert_time > 0, attack_visible)
 	velocity = Vector3.ZERO
 	if brain.state == "ATTACK":
 		face(player.global_position)
-		if attack_left == 0.0 and has_clear_attack():
+		if attack_left == 0.0:
 			attack_left = 1.0
 			player.take_damage(10.0)
 			cue_requested.emit("attack")
@@ -114,7 +115,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	visual.animate(delta, Vector2(velocity.x, velocity.z).length(), false, true, brain.state == "ATTACK")
 	if debug_enabled:
-		debug_label.text = "WALKER #%d · %s\nPlayer · %.1f m · %.0f HP" % [get_instance_id() % 1000, brain.state, distance, health.current]
+		var target_name := "Patrulha" if brain.state == "PATROL" else "Player"
+		var target_distance := global_position.distance_to(patrol_target) if brain.state == "PATROL" else distance
+		debug_label.text = "WALKER #%d · %s\n%s · %.1f m · %.0f HP" % [get_instance_id() % 1000, brain.state, target_name, target_distance, health.current]
 		update_debug_path()
 
 func face(target: Vector3) -> void:

@@ -75,16 +75,27 @@ func update_aim() -> void:
 func shoot_at(target: Vector3) -> bool:
 	if not active or not health.is_alive() or not weapon.fire():
 		return false
-	var origin := global_position + Vector3(0, 1.0, 0)
+	var facing := target - global_position
+	if Vector2(facing.x, facing.z).length() > 0.1:
+		rotation.y = atan2(-facing.x, -facing.z)
+	visual.animate(0.0, 0.0, focused, true)
+	var body_origin := global_position + Vector3(0, 1.0, 0)
+	var origin: Vector3 = visual.muzzle.global_position
 	var direction := (target - origin).normalized()
 	direction.y = 0.0
 	if direction.length_squared() < 0.001:
 		direction = -global_basis.z
 	direction = direction.normalized().rotated(Vector3.UP, randf_range(-0.065, 0.065) if not focused else 0.0)
 	var end := origin + direction * 45.0
+	# The barrel must not bypass a wall when it visually extends beyond the body.
+	var barrel_query := PhysicsRayQueryParameters3D.create(body_origin, origin, 1)
+	var barrel_hit := get_world_3d().direct_space_state.intersect_ray(barrel_query)
+	if not barrel_hit.is_empty():
+		origin = body_origin
+		end = barrel_hit.position
 	var query := PhysicsRayQueryParameters3D.create(origin, end, 1 | 4)
 	query.exclude = [get_rid()]
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query) if barrel_hit.is_empty() else barrel_hit
 	if not hit.is_empty():
 		end = hit.position
 		if hit.collider.has_method("take_damage"):
@@ -97,13 +108,15 @@ func shoot_at(target: Vector3) -> bool:
 
 func draw_tracer(origin: Vector3, end: Vector3) -> void:
 	var tracer := MeshInstance3D.new()
+	tracer.name = "ShotTracer"
 	var mesh := ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES, Props.material(Color("ffe2a0"), true))
-	mesh.surface_add_vertex(origin)
-	mesh.surface_add_vertex(end)
+	mesh.surface_add_vertex(Vector3.ZERO)
+	mesh.surface_add_vertex(end - origin)
 	mesh.surface_end()
 	tracer.mesh = mesh
 	get_parent().add_child(tracer)
+	tracer.global_position = origin
 	get_tree().create_timer(0.07).timeout.connect(tracer.queue_free)
 
 func take_damage(amount: float) -> void:
