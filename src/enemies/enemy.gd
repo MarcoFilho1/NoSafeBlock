@@ -57,12 +57,10 @@ func _ready() -> void:
 	collision_mask = 1 | 2 | 4 | 8
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
-	# The crawler is barely knee high, so it gets a body a shot can actually miss over.
-	var low := kind == "flanker"
-	shape.radius = 0.45 if low else 0.35
-	shape.height = 1.0 if low else 1.8
+	shape.radius = 0.35
+	shape.height = 1.8
 	collision.shape = shape
-	collision.position.y = 0.5 if low else 0.9
+	collision.position.y = 0.9
 	add_child(collision)
 	visual = Visual.new()
 	add_child(visual)
