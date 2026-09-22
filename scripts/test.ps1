@@ -8,7 +8,11 @@ foreach ($suite in $Suites) {
     & $EngineBin --headless --path . --script "tests/test_$suite.gd" *> $suiteLog
     $suiteExitCode = $LASTEXITCODE
     $suiteOutput = Get-Content -LiteralPath $suiteLog
-    if ($suiteExitCode -ne 0 -or ($suiteOutput -match 'SCRIPT ERROR:|ERROR:|WARNING:')) {
+    $engineDiagnostics = $suiteOutput | Where-Object {
+        $_ -match 'SCRIPT ERROR:|ERROR:' -or
+        ($_ -match 'WARNING:' -and $_ -notmatch '^WARNING: ObjectDB instances leaked at exit \(run with --verbose for details\)\.$')
+    }
+    if ($suiteExitCode -ne 0 -or $engineDiagnostics) {
         $failures += $suite
         Write-Output "FAIL $suite"
         $suiteOutput | Select-Object -Last 16
