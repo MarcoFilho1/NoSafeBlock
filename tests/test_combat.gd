@@ -1,4 +1,6 @@
 extends SceneTree
+## Roughly where the muzzle sits when the player is aiming.
+const SHOT_HEIGHT: float = 1.25
 var failures := 0
 func check(ok: bool, message: String) -> void:
 	if not ok:
@@ -35,7 +37,40 @@ func run() -> void:
 		check(not game.spawn_position_clear(Vector3(-11, 0, -10)), "Reject spawn inside building")
 		check(not game.spawn_position_clear(enemy.position), "Reject overlapping actor")
 		check(game.spawn_position_clear(Vector3(0, 0, 20)), "Accept clear road")
+	# Shots leave the muzzle flat at SHOT_HEIGHT and there is no vertical aim, so every
+	# kind has to keep a body standing in that line. Focus zeroes the weapon spread, so a
+	# miss here means a hitbox problem and not bad luck.
+	game.player.focused = true
+	var angle := 0.0
+	for kind in ["walker", "runner", "flanker", "spitter", "demolisher", "screamer", "volatile", "executioner", "matriarch", "aberration"]:
+		var found = clear_spot(game, combat, angle)
+		check(found != null, "%s has somewhere to stand in the open" % kind)
+		if found == null:
+			continue
+		angle = found.angle + 0.45
+		var spot: Vector3 = found.spot
+		var target = game.spawn_enemy(spot, kind)
+		target.set_physics_process(false)
+		await frames(3)
+		var before: float = target.health.current
+		game.player.weapon.cooldown = 0.0
+		game.player.weapon.ammo = game.player.weapon.definition.capacity
+		game.player.shoot_at(spot + Vector3(0, 1, 0))
+		await frames(2)
+		check(target.health.current < before, "%s can be hit by direct fire" % kind)
 	game.free()
 	await create_timer(0.2).timeout
 	print("Combat: %d failures" % failures)
 	quit(1 if failures else 0)
+
+func clear_spot(game: Node, combat, from_angle: float) -> Variant:
+	## Parked cars, stations and walls block shots, so find an open line before firing.
+	for step in range(90):
+		var angle: float = from_angle + step * 0.07
+		var spot := Vector3(cos(angle) * 6.0, 0, sin(angle) * 6.0)
+		if not game.spawn_position_clear(spot):
+			continue
+		var eye: Vector3 = game.player.global_position + Vector3(0, SHOT_HEIGHT, 0)
+		if combat.clear_line(game.world.get_world_3d(), eye, spot + Vector3(0, SHOT_HEIGHT, 0)):
+			return {"spot": spot, "angle": angle}
+	return null
