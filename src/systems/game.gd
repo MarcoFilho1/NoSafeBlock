@@ -125,11 +125,18 @@ func _process(_delta: float) -> void:
 func try_spawn() -> void:
 	if not is_instance_valid(player) or waves.alive >= Waves.MAX_ACTIVE or (waves.pending <= 0 and not waves.boss_pending):
 		return
+	# The kind is drawn before the position: the flanker hunts in from the city limits,
+	# everything else from the ring around the player.
+	var kind: String = waves.boss_kind() if waves.boss_pending else waves.enemy_kind(randf())
+	var edge_spawn := waves.spawns_at_edge(kind)
 	# Reserve free, navigable space even when several enemies spawn on the same edge.
 	var candidates: Array[Vector3] = []
 	var nav_map := world.get_world_3d().navigation_map
 	for base in world.spawn_points:
-		if base.distance_to(player.global_position) < 14 or base.distance_to(player.global_position) > 32:
+		if edge_spawn:
+			if not waves.edge_spawn_allows(base, player.global_position):
+				continue
+		elif base.distance_to(player.global_position) < 14 or base.distance_to(player.global_position) > 32:
 			continue
 		for offset in [Vector3.ZERO, Vector3(1.3, 0, 0), Vector3(-1.3, 0, 0), Vector3(0, 0, 1.3), Vector3(0, 0, -1.3)]:
 			var candidate := NavigationServer3D.map_get_closest_point(nav_map, base + offset)
@@ -143,14 +150,14 @@ func try_spawn() -> void:
 					break
 			if not occupied and spawn_position_clear(candidate):
 				candidates.append(candidate)
-	var point: Variant = waves.choose_spawn(candidates, player.global_position)
+	var point: Variant = waves.choose_edge_spawn(candidates, player.global_position) if edge_spawn else waves.choose_spawn(candidates, player.global_position)
 	if point == null:
 		return
 	if waves.boss_pending:
 		if waves.register_boss_spawn():
 			spawn_enemy(point, waves.boss_kind())
 	elif waves.register_spawn():
-		spawn_enemy(point, waves.enemy_kind(randf()))
+		spawn_enemy(point, kind)
 
 func spawn_enemy(point: Vector3, kind: String = "walker") -> CharacterBody3D:
 	var enemy := Enemy.new()
@@ -159,7 +166,8 @@ func spawn_enemy(point: Vector3, kind: String = "walker") -> CharacterBody3D:
 	enemy.configure(kind, waves.round_number)
 	enemy.game = self
 	enemy.effects = effects
-	enemy.alert_time = 60
+	# A flanker crosses the city to reach the player, so its alert has to outlast the walk.
+	enemy.alert_time = 240 if kind == "flanker" else 60
 	actors.add_child(enemy)
 	enemies.append(enemy)
 	enemy.set_debug(debug_enabled)

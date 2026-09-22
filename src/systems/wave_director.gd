@@ -62,3 +62,32 @@ func register_summon() -> bool:
 		return false
 	alive += 1
 	return true
+
+## Agents that hunt in from the city limits instead of the ring around the player.
+const EDGE_KINDS: Array[String] = ["flanker"]
+const EDGE_RIM: float = 70.0
+const EDGE_MIN_DISTANCE: float = 55.0
+## How much farther than the closest rim position a spawn may be.
+const EDGE_SPREAD: float = 1.35
+
+func spawns_at_edge(kind: String) -> bool:
+	return kind in EDGE_KINDS
+
+func edge_spawn_allows(point: Vector3, player_position: Vector3) -> bool:
+	## Out on the rim of the map, and never near enough to appear on top of the player
+	## when the player is already fighting at the border.
+	return maxf(absf(point.x), absf(point.z)) >= EDGE_RIM and point.distance_to(player_position) >= EDGE_MIN_DISTANCE
+
+func choose_edge_spawn(points: Array[Vector3], player_position: Vector3) -> Variant:
+	## Keep to the near side of the rim. The flanker should come in from the city
+	## limits, not hike across the whole map from the opposite corner.
+	if points.is_empty():
+		return null
+	var nearest: float = INF
+	for point in points:
+		nearest = minf(nearest, point.distance_to(player_position))
+	var close: Array[Vector3] = []
+	for point in points:
+		if point.distance_to(player_position) <= nearest * EDGE_SPREAD:
+			close.append(point)
+	return close.pick_random()

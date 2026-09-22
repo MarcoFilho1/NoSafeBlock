@@ -139,7 +139,10 @@ func _physics_process(delta: float) -> void:
 		if path_left <= 0.0:
 			path_left = 0.3
 			if brain.state == "CHASE":
-				navigation.target_position = brain.approach_target(global_position, player.global_position)
+				var aim := brain.approach_target(global_position, player.global_position)
+				# The flank point can land inside a block. The brain decides where to aim and
+				# the body resolves it against the mesh, so the target is always reachable.
+				navigation.target_position = NavigationServer3D.map_get_closest_point(get_world_3d().navigation_map, aim)
 			else:
 				if global_position.distance_to(patrol_target) < 1.0:
 					# Inward patrol prevents idle enemies from stranding a round at the perimeter.
