@@ -131,7 +131,7 @@ func run() -> void:
 	game.set_physics_process(true)
 	await frames(3)
 	check(game.waves.round_number == 2 and game.waves.pending == 8 and game.intermission > 0, "Real last kill advances to second wave")
-	check(game.score == 50, "Five Walker kills award fifty points")
+	check(game.score == 175, "Five kills plus first wave survival reward")
 	# An in-range target behind a thin obstacle must not strand the agent in ATTACK.
 	game.start_game()
 	game.set_physics_process(false)
@@ -143,6 +143,8 @@ func run() -> void:
 	check(not blocked_attacker.has_clear_attack(), "Thin-obstacle fixture blocks melee ray")
 	check(blocked_attacker.brain.state == "CHASE", "Occluded melee target falls back to navigation")
 	await frames(120)
+	if blocked_attacker.position.distance_to(Vector3(-15.4, 0, 5)) <= 0.3:
+		print("Blocked fixture pos=", blocked_attacker.position, " velocity=", blocked_attacker.velocity, " closest=", NavigationServer3D.map_get_closest_point(nav_map, blocked_attacker.position), " path=", blocked_attacker.navigation.get_current_navigation_path())
 	check(blocked_attacker.position.distance_to(Vector3(-15.4, 0, 5)) > 0.3, "Occluded attacker moves around obstacle")
 	game.start_game()
 	game.set_physics_process(false)

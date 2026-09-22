@@ -6,14 +6,15 @@ Autoridade funcional: `plano_desenvolvimento_zombie_survival.md`.
 
 - Godot 4.6.1 standard, GDScript, renderer Compatibility, desktop com teclado e mouse.
 - Uma única implementação. A equipe declarou não ter preferência entre Unity e Godot.
-- Mundo 3D pequeno, câmera ortográfica fixa em perspectiva isométrica, arte original feita de primitivas low-poly. Sem downloads de assets ou plugins.
+- Mundo 3D urbano de 180 × 180 unidades, câmera ortográfica acompanhando o jogador em perspectiva isométrica e arte original feita de primitivas low-poly. Sem downloads de assets ou plugins.
 - WASD relativo à tela; mouse orienta arma; esquerdo dispara; direito concentra, reduz dispersão e velocidade, muda postura e retículo; R recarrega; Esc pausa; F1 mostra agentes.
-- Pistola: 12 tiros, recarga de 1,4 s, reserva ilimitada explicitamente indicada na interface, 34 de dano, intervalo de 0,24 s. Sem acessórios.
-- Jogador: 100 HP; colisões físicas; animações procedurais de andar, focar, tiro, dano e morte.
-- Walker: 68 HP, 10 pontos, ataque de 10 a cada 1 s; IDLE, PATROL, CHASE, ATTACK, DEAD. Percepção por distância e audição de tiros. Caminho via NavigationAgent3D/NavMesh; obstáculos bloqueiam movimento e tiros.
-- Hordas crescentes a partir de 5 inimigos, emissão escalonada, máximo de 30 vivos, spawns distantes do jogador. Intervalo entre hordas e game over interrompem ações.
+- Arsenal: nove armas com duas vagas de equipamento, incluindo calibre 12, fuzil, plasma e eletricidade. Pistola inicial mantém reserva ilimitada; outras armas têm reserva limitada e compras de munição. Plasma causa dano em área e eletricidade encadeia para alvos expostos.
+- Jogador: 100 HP inicial, colete e até três granadas; upgrades por partida com três níveis de vida, resistência, recarga e movimento, e duas melhorias de dano por arma. Colisões e animações procedurais permanecem.
+- Inimigos: Errante, Corredor, Cuspidor, Demolidor, Gritador e Volátil; cada tipo possui silhueta, sinalização e habilidade próprias. Mantêm percepção, perseguição e ataques bloqueados por paredes.
+- Hordas crescentes a partir de 5 inimigos, emissão escalonada e máximo de 30 vivos. Chefes chegam nas hordas 10, 20 e 30, repetindo Carrasco, Matriarca e Aberração; chefe e invocações contam para a conclusão da rodada.
+- Cidade: cinco distritos, 11 interiores com saídas alternativas, estações de compra, minimapa e barricadas destrutíveis/reparáveis. Barricadas não disparam rebake da NavMesh e inimigos atacam a obstrução física quando necessário.
 - Menu, HUD, pausa, Game Over, replay e retorno ao menu. Áudio sintetizado original, com mute. F1: estados, percepção, rota, alvo, distância, FPS e contagem.
-- Primeiro entregar Walker e loop completo. Outros tipos, armas, upgrades, multiplayer e sistemas de sobrevivência ficam fora desta entrega.
+- O loop completo inclui exploração, economia, defesa, armas, progressão limitada, inimigos especiais e chefes. Multiplayer, crafting, fome e sede permanecem fora desta entrega.
 
 ## Componentes e contratos
 

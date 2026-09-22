@@ -1,12 +1,12 @@
-# Validação do MVP — 2026-09-21
+# Validação da expansão urbana — 2026-09-21
 
 ## Ambiente e escopo
 
-Godot `4.6.1.stable.official.14d19694e`, macOS Apple Silicon, renderer Compatibility/OpenGL (Apple M5). Engine baixada do repositório oficial `godotengine/godot-builds`. Sem plugins ou assets externos. A engine e os templates de exportação são ferramentas locais, não arquivos versionados do jogo.
+Godot `4.6.1.stable.official.14d19694e`, Windows, renderer Compatibility/OpenGL (AMD Radeon(TM) Graphics). Sem plugins ou assets externos. A engine é uma ferramenta local, não um arquivo versionado do jogo.
 
 ## Evidência automatizada
 
-Comando: `GODOT_BIN=/caminho/Godot.app/Contents/MacOS/Godot bash scripts/test.sh`.
+Comando: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1`.
 
 | Suíte | Cobertura |
 |---|---|
@@ -14,15 +14,20 @@ Comando: `GODOT_BIN=/caminho/Godot.app/Contents/MacOS/Godot bash scripts/test.sh
 | `test_presentation.gd` | 2 verificações: orientação da pistola e rotação do personagem |
 | `test_ui.gd` | 4 verificações: vida, munição, instruções e áudio dentro do viewport 1280×800 |
 | `test_controls.gd` | 5 verificações: pausa com botão pressionado, novo clique, perda de foco, botão direito e postura de foco |
-| `test_integration.gd` | 942 verificações com cena e física reais: WASD nas quatro direções, paredes, raycast, morte/pontos únicos, rotas de todos os spawns, contorno de prédio, cooldown, pausa, game over, três reinícios, segunda horda, obstáculo estreito, 30 agentes e pares sem sobreposição no spawn |
+| `test_integration.gd` | 1.079 verificações com cena e física reais: WASD, paredes, raycast, mortes/pontos, rotas, cooldown, pausa, reinício, segunda horda, obstáculos e 30 agentes |
+| `test_city.gd` | Cinco distritos, 11 interiores com saída alternativa e rotas reais pela NavMesh |
+| `test_progression.gd` e `test_arsenal.gd` | Saldo atômico, tetos, melhorias, recarga parcial e troca de armas |
+| `test_defenses.gd`, `test_effects.gd` e `test_combat.gd` | Barricadas, dano inválido, pausas, cura, explosões e oclusão por paredes |
+| `test_enemies.gd`, `test_bosses.gd` e `test_expansion.gd` | Desbloqueio de tipos, chefes, população máxima, compras e reset completo |
+| `test_navigation_recovery.gd` | Recuperação de rota após colisão com obstáculo |
 
-Resultado final: cinco suítes, **1.031 verificações, zero falhas e zero avisos da engine**. O runner rejeita `SCRIPT ERROR`, `ERROR` e `WARNING`, além de códigos de saída não-zero. Comparações entre pares na prova de 30 agentes explicam a quantidade alta de verificações; não representam centenas de cenários independentes.
+Resultado final: 15 suítes, **zero falhas e zero avisos da engine**. O runner rejeita `SCRIPT ERROR`, `ERROR` e `WARNING`, além de códigos de saída não-zero.
 
 ## Evidência gráfica
 
-Inspeção da aplicação nativa: menu, partida, disparo e pausa. Capturas geradas pela cena real em `builds/screenshots/`: `menu.png`, `gameplay-30-agents.png`, `agents-debug.png`, `game-over.png`.
+Inspeção da aplicação nativa: menu, partida, compras, interior, barricada e chefes. Capturas geradas pela cena real em `builds/screenshots/`: cinco distritos, interior defendido, 30 inimigos, Carrasco, Matriarca e Aberração.
 
-O cenário gráfico com 30 agentes foi executado com renderização real, não headless. Uma amostra registrou 83 FPS e `TIME_PROCESS` mediano de 22,03 ms / p95 de 25,93 ms. São métricas pontuais da engine nesta máquina, coletadas por mecanismos diferentes; não equivalem a benchmark sustentado ou garantia para outros equipamentos. O modo de depuração desenha raios e caminhos de todos os agentes e tem custo adicional.
+O cenário gráfico com 30 inimigos foi executado com renderização real, não headless. A cidade ficou pronta em 2.083 ms; uma amostra registrou 40 FPS e `TIME_PROCESS` mediano de 31,34 ms / p95 de 75,05 ms. São métricas pontuais, não uma garantia para outros equipamentos.
 
 ## Revisão independente e regressões
 
@@ -35,15 +40,15 @@ Também foi corrigida a telemetria de patrulha para mostrar seu alvo real. Regre
 
 ## Builds
 
-- macOS universal: exportação release, pacote `.app`, assinatura ad hoc verificada, execução headless do binário exportado e abertura gráfica do aplicativo independente; menu, início, F1, morte por ataques, Game Over, reinício, pausa e retorno ao menu conferidos na build. Distribuição pública ainda requer a estratégia de assinatura/notarização da equipe.
-- Windows x86_64: exportação release pelo preset. Execução em Windows **não validada** neste ambiente macOS.
-- CI: workflow versionado para importação e testes Linux; execução no GitHub **não verificada**, pois esta entrega não publicou branches.
+- Windows x86_64: preset presente, mas não exportado porque os templates 4.6.1 não estavam instalados neste ambiente.
+- macOS universal: não revalidado nesta expansão.
+- CI: workflow versionado; execução remota não foi verificada porque nenhuma branch foi publicada.
 
 ## Limites e integração
 
-- Implementado: um Walker, uma pistola, loop completo e apresentação procedural. Tipos adicionais, armas, upgrades e coop não fazem parte desta entrega.
+- Implementado: cidade urbana, nove armas, compras, upgrades limitados, barricadas, itens, seis tipos de inimigo, chefes recorrentes, minimapa e apresentação procedural. Coop, crafting, fome e sede não fazem parte desta entrega.
 - Não foi feita sessão manual prolongada de vários minutos nem auditoria de acessibilidade ou de todas as proporções de tela. Recomenda-se playtest de balanceamento pela equipe.
-- O plano original exige funcionamento em `develop` para considerar a entrega integrada. Esta implementação permanece em `feature/zombie-survival-mvp`; `develop` e `main` não receberam merge, e nenhuma branch foi publicada.
+- Esta implementação permanece em `feature/city-survival`; `develop` e `main` não receberam merge, e nenhuma branch foi publicada.
 - A validação local não substitui aprovação da equipe, teste Windows ou execução futura do CI.
 
 ## Referências técnicas
