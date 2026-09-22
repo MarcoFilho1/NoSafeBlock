@@ -36,8 +36,8 @@ func choose_spawn(points: Array[Vector3], player_position: Vector3) -> Variant:
 
 func enemy_kind(roll: float) -> String:
 	var available: Array[String] = []
-	var ids := ["runner", "spitter", "demolisher", "screamer", "volatile"]
-	var rounds := [3, 5, 7, 9, 12]
+	var ids := ["runner", "flanker", "spitter", "demolisher", "screamer", "volatile"]
+	var rounds := [3, 4, 5, 7, 9, 12]
 	for i in range(ids.size()):
 		if round_number >= rounds[i]:
 			available.append(ids[i])

@@ -25,6 +25,8 @@ func configure(kind_id: String, round_number: int) -> void:
 	speed = minf(4.3, float(definition.speed) + (round_number - 1) * 0.025)
 	contact_damage = float(definition.damage) * (1.0 + (round_number - 1) * 0.025)
 	points = 1000 + 50 * round_number if is_boss else int(definition.points)
+	# A stable side per agent makes a group split around the player instead of stacking up behind it.
+	brain.flank_side = 0.0 if kind != "flanker" else (1.0 if randf() < 0.5 else -1.0)
 
 signal eliminated(points: int)
 signal cue_requested(kind: String)
@@ -55,10 +57,12 @@ func _ready() -> void:
 	collision_mask = 1 | 2 | 4 | 8
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
-	shape.radius = 0.35
-	shape.height = 1.8
+	# The crawler is barely knee high, so it gets a body a shot can actually miss over.
+	var low := kind == "flanker"
+	shape.radius = 0.45 if low else 0.35
+	shape.height = 1.0 if low else 1.8
 	collision.shape = shape
-	collision.position.y = 0.9
+	collision.position.y = 0.5 if low else 0.9
 	add_child(collision)
 	visual = Visual.new()
 	add_child(visual)
@@ -66,7 +70,7 @@ func _ready() -> void:
 	visual.scale = definition.scale
 	visual.body_material.albedo_color = definition.color
 	visual.set_enemy_kind(kind, definition.color)
-	if kind not in ["walker", "runner"] and is_instance_valid(effects):
+	if kind not in ["walker", "runner", "flanker"] and is_instance_valid(effects):
 		abilities = BossAbilities.new() if is_boss else Abilities.new()
 		abilities.owner_enemy = self
 		add_child(abilities)
@@ -135,7 +139,7 @@ func _physics_process(delta: float) -> void:
 		if path_left <= 0.0:
 			path_left = 0.3
 			if brain.state == "CHASE":
-				navigation.target_position = player.global_position
+				navigation.target_position = brain.approach_target(global_position, player.global_position)
 			else:
 				if global_position.distance_to(patrol_target) < 1.0:
 					# Inward patrol prevents idle enemies from stranding a round at the perimeter.
@@ -162,9 +166,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	visual.animate(delta, Vector2(velocity.x, velocity.z).length(), false, true, brain.state == "ATTACK")
 	if debug_enabled:
-		var target_name := "Patrulha" if brain.state == "PATROL" else "Player"
+		var target_name := "Patrulha" if brain.state == "PATROL" else ("Player" if is_zero_approx(brain.flank_side) else "Flanco %s" % ("E" if brain.flank_side > 0 else "D"))
 		var target_distance := global_position.distance_to(patrol_target) if brain.state == "PATROL" else distance
-		debug_label.text = "WALKER #%d · %s\n%s · %.1f m · %.0f HP" % [get_instance_id() % 1000, brain.state, target_name, target_distance, health.current]
+		debug_label.text = "%s #%d · %s\n%s · %.1f m · %.0f HP" % [definition.name, get_instance_id() % 1000, brain.state, target_name, target_distance, health.current]
 		update_debug_path()
 
 func face(target: Vector3) -> void:
