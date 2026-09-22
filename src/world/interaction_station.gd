@@ -7,8 +7,15 @@ var sign: Label3D
 func _ready() -> void:
 	var color := Color("6fc6b8") if offer.kind == "weapon" else Color("e6ac60")
 	Props.box(self, Vector3(1.1, 1.7, 0.65), Vector3(0, 0.85, 0), Color("263c3d"))
+	# Edge posts, a hood over the screen and louvres below turn the slab into a kiosk.
+	for x in [-0.59, 0.59]:
+		Props.detail(Props.box(self, Vector3(0.13, 1.72, 0.72), Vector3(x, 0.85, 0), Color("1d3031")))
+	Props.detail(Props.wedge(self, Vector3(1.3, 0.26, 0.86), Vector3(0, 1.78, 0.06), color.darkened(0.4)))
+	for i in range(3):
+		Props.detail(Props.box(self, Vector3(0.72, 0.06, 0.12), Vector3(0, 0.42 + i * 0.17, 0.34), Color("18292a")))
 	Props.box(self, Vector3(0.88, 0.6, 0.1), Vector3(0, 1.2, 0.38), color)
 	Props.cylinder(self, 1.0, 0.035, Vector3(0, 0.09, 0), color.darkened(0.3))
+	Props.detail(Props.ring(self, 0.94, 1.04, Vector3(0, 0.1, 0), color, 16))
 	sign = Props.sign_text(self, offer.title, Vector3(0, 2.5, 0), 42)
 	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sign.modulate = color
