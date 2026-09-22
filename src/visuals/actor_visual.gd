@@ -34,6 +34,8 @@ var head_mesh: MeshInstance3D
 var crown_mesh: MeshInstance3D
 var shadow_mesh: MeshInstance3D
 var eye_meshes: Array[MeshInstance3D] = []
+var shoulder_pads: Array[MeshInstance3D] = []
+var belt_mesh: MeshInstance3D
 ## Limb cycle multiplier: a leaner frame moves its limbs faster at the same speed.
 var gait: float = 1.0
 var crawler: bool = false
@@ -59,8 +61,23 @@ func build(is_zombie: bool) -> void:
 	right_leg = limb(Vector3(0.19, 0.65, 0), Vector3(0.23, 0.58, 0.26), Color("364d50"))
 	left_arm = limb(Vector3(-0.43, 1.25, 0), Vector3(0.19, 0.55, 0.24), coat)
 	right_arm = limb(Vector3(0.43, 1.25, 0), Vector3(0.19, 0.55, 0.24), coat)
-	if not zombie:
+	# Boots and hands hang off the limb tips, so the gait carries them for free.
+	for leg in [left_leg, right_leg]:
+		extremity(leg, Vector3(0.26, 0.16, 0.42), Vector3(0, 0.01, -0.07), Color("222d31"))
+	for arm in [left_arm, right_arm]:
+		extremity(arm, Vector3(0.2, 0.19, 0.22), Vector3(0, -0.05, 0), skin.darkened(0.3) if zombie else Color("3c4740"))
+	for x in [-0.42, 0.42]:
+		var pad := Props.detail(Props.wedge(torso, Vector3(0.36, 0.22, 0.44), Vector3(x, 1.28, 0), coat.darkened(0.22)))
+		pad.rotation.z = -signf(x) * 0.55
+		shoulder_pads.append(pad)
+	belt_mesh = Props.detail(Props.box(torso, Vector3(0.69, 0.14, 0.42), Vector3(0, 0.75, 0), coat.darkened(0.45)))
+	if zombie:
+		Props.detail(Props.box(torso, Vector3(0.3, 0.13, 0.26), Vector3(0, 1.41, -0.16), skin.darkened(0.3)))
+	else:
 		Props.box(torso, Vector3(0.4, 0.5, 0.19), Vector3(0, 1, 0.28), Color("5c6752"))
+		Props.detail(Props.box(torso, Vector3(0.5, 0.07, 0.22), Vector3(0, 1.79, -0.26), Color("2c3a38")))
+		for x in [-0.17, 0.17]:
+			Props.detail(Props.box(torso, Vector3(0.09, 0.62, 0.06), Vector3(x, 1.05, -0.2), Color("4a5545")))
 		Props.box(right_arm, Vector3(0.13, 0.32, 0.2), Vector3(0, -0.62, 0.02), Color("27383d"))
 		muzzle = Node3D.new()
 		muzzle.position = Vector3(0, -0.81, 0.02)
@@ -68,22 +85,23 @@ func build(is_zombie: bool) -> void:
 		flash = Props.box(muzzle, Vector3(0.2, 0.25, 0.2), Vector3.ZERO, Color("ffe5a1"))
 		flash.material_override = Props.material(Color("ffe5a1"), true)
 		flash.visible = false
-		var mesh := TorusMesh.new()
-		mesh.inner_radius = 0.52
-		mesh.outer_radius = 0.60
-		ring = MeshInstance3D.new()
-		ring.mesh = mesh
+		ring = Props.ring(self, 0.52, 0.60, Vector3(0, 0.08, 0), Color("edba68"), 24)
 		ring.material_override = Props.material(Color("edba68"), true)
 		ring.material_override.no_depth_test = true
-		ring.position.y = 0.08
-		add_child(ring)
 
 func limb(pos: Vector3, size: Vector3, color: Color) -> Node3D:
 	var pivot := Node3D.new()
 	pivot.position = pos
 	torso.add_child(pivot)
 	Props.box(pivot, size, Vector3(0, -size.y / 2.0, 0), color)
+	var tip := Node3D.new()
+	tip.name = "Tip"
+	tip.position.y = -size.y
+	pivot.add_child(tip)
 	return pivot
+
+func extremity(pivot: Node3D, size: Vector3, offset: Vector3, color: Color) -> MeshInstance3D:
+	return Props.detail(Props.box(pivot.get_node("Tip"), size, offset, color))
 
 func animate(delta: float, speed: float, focus: bool, alive: bool, attacking: bool = false, reloading: bool = false) -> void:
 	if not alive:
@@ -186,6 +204,11 @@ func build_crawler() -> void:
 	crown_mesh.rotation.x = -0.45
 	for i in range(eye_meshes.size()):
 		eye_meshes[i].position = head_mesh.position + Vector3(-0.08 if i == 0 else 0.08, 0.06, -0.17)
+	# Shoulder pads ride the lowered shoulders; a belt makes no sense on all fours.
+	for i in range(shoulder_pads.size()):
+		shoulder_pads[i].position = shoulder + Vector3(-0.26 if i == 0 else 0.26, 0.05, 0.04)
+		shoulder_pads[i].scale = Vector3(0.75, 0.75, 0.75)
+	belt_mesh.visible = false
 	human_limb(left_arm, Vector3(-0.22, shoulder.y, shoulder.z), -ARM_SPLAY, ARM_ANGLE, ARM_BEND, UPPER_ARM, FOREARM, 0.105)
 	human_limb(right_arm, Vector3(0.22, shoulder.y, shoulder.z), ARM_SPLAY, ARM_ANGLE, ARM_BEND, UPPER_ARM, FOREARM, 0.105)
 	human_limb(left_leg, Vector3(-0.21, hip.y, hip.z), -LEG_SPLAY, LEG_ANGLE, LEG_BEND, THIGH, SHIN, 0.135)
@@ -213,3 +236,10 @@ func human_limb(pivot: Node3D, anchor: Vector3, splay: float, angle: float, bend
 	joint.rotation.x = bend
 	pivot.add_child(joint)
 	Props.box(joint, Vector3(thickness * 0.85, lower, thickness * 0.85), Vector3(0, -lower / 2.0, 0), color)
+	## The hand or foot follows the elbow down to the end of the lower bone and
+	## shrinks with the limb, so a crawler plants four thin extremities.
+	var tip: Node3D = pivot.get_node("Tip")
+	pivot.remove_child(tip)
+	joint.add_child(tip)
+	tip.position = Vector3(0, -lower, 0)
+	tip.scale = Vector3.ONE * (thickness / 0.22)

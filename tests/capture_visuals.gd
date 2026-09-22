@@ -35,6 +35,11 @@ func run() -> void:
 		samples.append(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0)
 	samples.sort()
 	print("Rendered 30-agent frame time: median=%.2f ms p95=%.2f ms; FPS=%d" % [samples[90], samples[171], Engine.get_frames_per_second()])
+	## What the camera actually pays for, after visibility ranges and culling.
+	print("Rendered scene: %d objects, %d primitives, %d draw calls" % [
+		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
 	game.debug_enabled = true
 	for enemy in game.enemies:
 		enemy.set_debug(true)

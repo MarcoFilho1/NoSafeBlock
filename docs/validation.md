@@ -56,3 +56,42 @@ Também foi corrigida a telemetria de patrulha para mostrar seu alvo real. Regre
 - [Godot 4.6.1 oficial](https://godotengine.org/download/archive/4.6.1-stable/)
 - [NavigationAgent3D: pontos de caminho e offset vertical](https://docs.godotengine.org/en/4.6/classes/class_navigationagent3d.html)
 - [Exportação macOS](https://docs.godotengine.org/en/4.6/tutorials/export/exporting_for_macos.html)
+
+# Validação das melhorias gráficas — 2026-09-22
+
+## Ambiente e escopo
+
+Godot `4.6.1.stable.official.14d19694e`, Windows 11, renderer Compatibility/OpenGL. Branch `feature/melhorias-graficas`, rebaseada sobre `feature/agente-flanker` em `51b1c77`. A base é a branch de feature mais avançada do repositório: `develop` ainda contém apenas o README, então não havia base integrada disponível. Escopo: apresentação apenas — kit de primitivas, fachadas, telhados, mobiliário urbano, veículos, árvores e extremidades dos atores. Nenhuma regra, rota ou contrato de agente foi alterado.
+
+## Evidência automatizada
+
+As 15 suítes foram executadas antes e depois da mudança, com o mesmo binário:
+
+| Momento | Resultado |
+|---|---|
+| Base (`feature/agente-flanker`) | 15 suítes, 0 falhas, 0 avisos |
+| Depois das melhorias | 15 suítes, 0 falhas, 0 avisos |
+
+`test_city.gd` continua aprovando as rotas reais pela NavMesh até os 11 interiores e `test_integration.gd` mantém as 1.079 verificações, o que sustenta a decisão de manter todo o mobiliário novo sem colisão.
+
+## Evidência gráfica e custo
+
+`tests/capture_visuals.gd` passou a imprimir também o que a câmera realmente paga por quadro. Cena de 30 agentes, mesma máquina, execução gráfica:
+
+| Medida | Base | Depois | Variação |
+|---|---|---|---|
+| Objetos no quadro | 2.173–2.265 | 2.702–2.830 | +24% a +25% |
+| Primitivas no quadro | 47.168–49.516 | 60.816–66.276 | +29% a +34% |
+| Draw calls | 1.916–2.008 | 2.445–2.573 | +28% |
+| FPS | 138–144 | 129–137 | −5% |
+
+O `TIME_PROCESS` mediano oscilou entre 7 ms e 57 ms na mesma branch em execuções consecutivas, então não serve como comparação; os contadores de renderização e o FPS são as medidas usadas aqui. São métricas pontuais de um equipamento, não uma garantia.
+
+O ganho de geometria é bem maior que os 25% que chegam ao quadro: quase todo o detalhe novo está fora do alcance de `DETAIL_RANGE` na maior parte do tempo e nenhum dele entra no passe de sombra.
+
+## Limites
+
+- Não houve sessão manual prolongada nesta entrega; o fluxo manual completo do critério de aceite continua sendo responsabilidade da revisão.
+- Não foi medido desempenho em outras máquinas, nem em resoluções diferentes de 1280 × 800.
+- O posto de combustível `SUNSET / FUEL` continua sobreposto ao quarteirão vizinho, como já estava antes desta mudança. As colunas novas da cobertura são decorativas e não corrigem essa sobreposição de layout.
+- Nenhuma branch foi promovida: a integração em `develop` depende de revisão da equipe.
