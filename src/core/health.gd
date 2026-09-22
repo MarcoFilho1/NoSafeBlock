@@ -21,3 +21,8 @@ func damage(amount: float) -> void:
 
 func is_alive() -> bool:
 	return current > 0.0
+
+func heal(amount: float) -> void:
+	if amount > 0 and is_alive():
+		current = minf(maximum, current + amount)
+		changed.emit(current, maximum)

@@ -1,6 +1,13 @@
 extends CanvasLayer
 
 const Reticle = preload("res://src/ui/reticle.gd")
+const Minimap = preload("res://src/ui/minimap.gd")
+var minimap: Control
+var weapon_label: Label
+var interaction_label: Label
+var boss_label: Label
+var boss_bar: ProgressBar
+var equipment_label: Label
 const INK := Color("101e21")
 const PAPER := Color("e9e4d5")
 const MUTED := Color("9baaa6")
@@ -118,7 +125,39 @@ func build_hud() -> void:
 	ammo_panel.add_child(ammo_box)
 	ammo_label = label("12 / 12", 27, AMBER)
 	ammo_box.add_child(ammo_label)
-	ammo_box.add_child(label("9 MM  /  RESERVA ILIMITADA", 12, MUTED))
+	weapon_label = label("PISTOLA / RESERVA ILIMITADA", 12, MUTED)
+	ammo_box.add_child(weapon_label)
+	equipment_label = label("", 13, MUTED)
+	equipment_label.position = Vector2(30, 117)
+	hud.add_child(equipment_label)
+	interaction_label = label("", 17, PAPER)
+	interaction_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	interaction_label.offset_left = 28
+	interaction_label.offset_right = -230
+	interaction_label.offset_top = -175
+	interaction_label.offset_bottom = -100
+	interaction_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hud.add_child(interaction_label)
+	boss_label = label("", 20, AMBER)
+	boss_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	boss_label.offset_top = 174
+	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud.add_child(boss_label)
+	boss_bar = ProgressBar.new()
+	boss_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	boss_bar.offset_left = 280
+	boss_bar.offset_right = -280
+	boss_bar.offset_top = 203
+	boss_bar.offset_bottom = 214
+	boss_bar.show_percentage = false
+	hud.add_child(boss_bar)
+	minimap = Minimap.new()
+	minimap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	minimap.offset_left = -215
+	minimap.offset_right = -28
+	minimap.offset_top = -295
+	minimap.offset_bottom = -108
+	hud.add_child(minimap)
 	status_label = label("", 22, PAPER)
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
@@ -181,7 +220,7 @@ func show_screen(state: String, score: int, wave: int) -> void:
 	column.add_child(divider)
 	if state == "MENU":
 		column.add_child(label("NO SAFE\nBLOCK", 68))
-		column.add_child(label("O bairro caiu.\nVocê ainda está de pé.", 24, MUTED))
+		column.add_child(label("A cidade caiu.\nVocê ainda está de pé.", 24, MUTED))
 	elif state == "OVER":
 		column.add_child(label("FIM DA\nLINHA.", 64))
 		column.add_child(label("%05d PONTOS\nHORDA %02d ALCANÇADA" % [score, wave], 24, AMBER))
@@ -193,7 +232,7 @@ func show_screen(state: String, score: int, wave: int) -> void:
 	column.add_child(spacer)
 	if state == "MENU":
 		column.add_child(label("01  MOVA-SE.   02  MIRE.   03  SOBREVIVA.", 13, AMBER))
-		column.add_child(label("WASD   mover     •     Mouse   mirar\nEsquerdo   atirar     •     Direito   focar\nR   recarregar     •     F1   ver agentes", 16, MUTED))
+		column.add_child(label("WASD mover / Mouse mirar e atirar\nR recarregar / Direito focar\nE comprar ou reparar / G granada\n1 e 2 ou roda: trocar arma", 16, MUTED))
 		column.add_child(button("INICIAR PARTIDA     →", func(): play_requested.emit(), true))
 		column.add_child(button("SAIR", func(): quit_requested.emit()))
 	elif state == "OVER":
@@ -203,7 +242,7 @@ func show_screen(state: String, score: int, wave: int) -> void:
 		column.add_child(button("CONTINUAR     →", func(): resume_requested.emit(), true))
 		column.add_child(button("VOLTAR AO MENU", func(): menu_requested.emit()))
 	column.add_child(button("ÁUDIO ON / OFF     [M]", func(): mute_requested.emit()))
-	column.add_child(label("UM QUARTEIRÃO. NENHUM LUGAR SEGURO.\nGODOT  /  EDIÇÃO ACADÊMICA 01", 12, MUTED))
+	column.add_child(label("CINCO DISTRITOS. NENHUM LUGAR SEGURO.\nNO SAFE BLOCK / CITY SURVIVAL", 12, MUTED))
 	# Keyboard navigation starts at a meaningful action.
 	for child in column.get_children():
 		if child is Button:
@@ -215,10 +254,28 @@ func update_game(game: Node) -> void:
 		return
 	var player = game.player
 	hp_label.text = "SOBREVIVENTE  /  %03d" % int(player.health.current)
+	hp_bar.max_value = player.health.maximum
 	hp_bar.value = player.health.current
 	wave_label.text = "HORDA %02d" % game.waves.round_number
-	score_label.text = "%05d PONTOS  ·  %d HOSTIS" % [game.score, game.waves.alive + game.waves.pending]
-	ammo_label.text = "RECARREGANDO…" if player.weapon.reloading else "%02d / 12" % player.weapon.ammo
+	score_label.text = "%d SALDO / %d TOTAL" % [game.progression.balance, game.score]
+	ammo_label.text = "RECARREGANDO…" if player.weapon.reloading else "%02d / %d" % [player.weapon.ammo, player.weapon.definition.capacity]
+	weapon_label.text = "%s / %s" % [player.weapon.definition.name, "∞" if player.weapon.reserve < 0 else str(player.weapon.reserve)]
+	equipment_label.text = "COLETE %02d / GRANADAS %d / SLOT %d" % [int(player.armor), player.grenades, player.loadout.active_slot + 1]
+	minimap.update_map(game.world.layout, player.global_position, game.world.discovered)
+	interaction_label.text = game.interaction.prompt(player, game.progression) if is_instance_valid(game.interaction) else "E: compras e barricadas / G: granada / 1-2: armas"
+	if game.feedback_left > 0:
+		interaction_label.text = game.feedback
+	var boss = null
+	for enemy in game.enemies:
+		if enemy.is_boss:
+			boss = enemy
+			break
+	boss_bar.visible = boss != null
+	boss_label.text = ""
+	if boss:
+		boss_label.text = "%s / %.0f HP" % [boss.definition.name, boss.health.current]
+		boss_bar.max_value = boss.health.maximum
+		boss_bar.value = boss.health.current
 	ammo_label.add_theme_font_size_override("font_size", 19 if player.weapon.reloading else 27)
 	reticle.focused = player.focused
 	reticle.reloading = player.weapon.reloading
@@ -231,6 +288,8 @@ func update_game(game: Node) -> void:
 	else:
 		mode_label.text = "WASD  Mover    RMB  Focar    R  Recarregar"
 	status_label.text = "HORDA %02d EM %d" % [game.waves.round_number, ceili(game.intermission)] if game.intermission > 0 else ""
+	if game.waves.boss_pending:
+		status_label.text += " / AMEACA UNICA A CAMINHO"
 	debug_label.visible = game.debug_enabled
 	debug_label.text = "AGENTES / F1\n%d ativos · %d pendentes\n%d FPS\nPercepção → decisão → ação" % [game.enemies.size(), game.waves.pending, Engine.get_frames_per_second()]
 	audio_label.text = "ESC  Pausa   ·   F1  Agentes   ·   M  " + ("Mudo" if game.audio.muted else "Áudio")

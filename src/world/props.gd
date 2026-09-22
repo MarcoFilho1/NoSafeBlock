@@ -17,6 +17,7 @@ static func box(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> Me
 	mesh.mesh = shape
 	mesh.material_override = material(color)
 	mesh.position = pos
+	mesh.visibility_range_end = 90
 	parent.add_child(mesh)
 	return mesh
 
@@ -83,5 +84,6 @@ static func car(parent: Node3D, pos: Vector3, color: Color) -> void:
 
 static func tree(parent: Node3D, pos: Vector3) -> void:
 	solid(parent, Vector3(0.5, 2.1, 0.5), pos + Vector3(0, 1.05, 0), Color("625a48"))
-	var crown := cylinder(parent, 1.4, 2.3, pos + Vector3(0, 3, 0), Color("536650"))
-	crown.mesh.top_radius = 0.15
+	for i in range(3):
+		var branch := box(parent, Vector3(0.15, 1.8, 0.15), pos + Vector3((i - 1) * 0.45, 2.4, 0), Color("595647"))
+		branch.rotation.z = (i - 1) * 0.7

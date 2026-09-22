@@ -16,6 +16,7 @@ var hit_time: float = 0.0
 var death_time: float = 0.0
 var zombie: bool = false
 var body_material: StandardMaterial3D
+var weapon_mesh: MeshInstance3D
 
 func build(is_zombie: bool) -> void:
 	zombie = is_zombie
@@ -93,3 +94,28 @@ func shot() -> void:
 
 func hurt() -> void:
 	hit_time = 0.22
+
+func set_weapon(data: Dictionary) -> void:
+	if weapon_mesh:
+		weapon_mesh.queue_free()
+	var long_gun: bool = data.id not in ["service_pistol", "heavy_pistol"]
+	weapon_mesh = Props.box(right_arm, Vector3(0.18, 0.62 if long_gun else 0.26, 0.18), Vector3(0, -0.65, 0.02), data.color.darkened(0.35))
+	flash.material_override = Props.material(data.color, true)
+
+func set_enemy_kind(kind: String, color: Color) -> void:
+	match kind:
+		"spitter", "matriarch":
+			for x in [-0.35, 0.35]:
+				Props.cylinder(torso, 0.3, 0.65, Vector3(x, 1.15, 0.35), color.lightened(0.2))
+		"demolisher", "executioner":
+			for x in [-0.5, 0.5]:
+				Props.box(torso, Vector3(0.4, 0.35, 0.55), Vector3(x, 1.3, 0), Color("424848"))
+			Props.box(torso, Vector3(0.7, 0.6, 0.2), Vector3(0, 1, -0.25), color.darkened(0.3))
+		"screamer":
+			Props.cylinder(torso, 0.28, 0.25, Vector3(0, 1.6, -0.2), Color("462b3e"))
+		"volatile":
+			Props.cylinder(torso, 0.45, 0.75, Vector3(0, 0.9, 0), Color("c58848"))
+		"aberration":
+			for x in [-0.45, 0.45]:
+				var spike := Props.box(torso, Vector3(0.18, 1.0, 0.18), Vector3(x, 1.7, 0.2), color.lightened(0.3))
+				spike.rotation.z = x
