@@ -25,6 +25,8 @@ func configure(kind_id: String, round_number: int) -> void:
 	speed = minf(4.3, float(definition.speed) + (round_number - 1) * 0.025)
 	contact_damage = float(definition.damage) * (1.0 + (round_number - 1) * 0.025)
 	points = 1000 + 50 * round_number if is_boss else int(definition.points)
+	# A stable side per agent makes a group split around the player instead of stacking up behind it.
+	brain.flank_side = 0.0 if kind != "flanker" else (1.0 if randf() < 0.5 else -1.0)
 
 signal eliminated(points: int)
 signal cue_requested(kind: String)
@@ -66,7 +68,7 @@ func _ready() -> void:
 	visual.scale = definition.scale
 	visual.body_material.albedo_color = definition.color
 	visual.set_enemy_kind(kind, definition.color)
-	if kind not in ["walker", "runner"] and is_instance_valid(effects):
+	if kind not in ["walker", "runner", "flanker"] and is_instance_valid(effects):
 		abilities = BossAbilities.new() if is_boss else Abilities.new()
 		abilities.owner_enemy = self
 		add_child(abilities)
@@ -135,7 +137,10 @@ func _physics_process(delta: float) -> void:
 		if path_left <= 0.0:
 			path_left = 0.3
 			if brain.state == "CHASE":
-				navigation.target_position = player.global_position
+				var aim := brain.approach_target(global_position, player.global_position)
+				# The flank point can land inside a block. The brain decides where to aim and
+				# the body resolves it against the mesh, so the target is always reachable.
+				navigation.target_position = NavigationServer3D.map_get_closest_point(get_world_3d().navigation_map, aim)
 			else:
 				if global_position.distance_to(patrol_target) < 1.0:
 					# Inward patrol prevents idle enemies from stranding a round at the perimeter.
@@ -162,9 +167,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	visual.animate(delta, Vector2(velocity.x, velocity.z).length(), false, true, brain.state == "ATTACK")
 	if debug_enabled:
-		var target_name := "Patrulha" if brain.state == "PATROL" else "Player"
+		var target_name := "Patrulha" if brain.state == "PATROL" else ("Player" if is_zero_approx(brain.flank_side) else "Flanco %s" % ("E" if brain.flank_side > 0 else "D"))
 		var target_distance := global_position.distance_to(patrol_target) if brain.state == "PATROL" else distance
-		debug_label.text = "WALKER #%d · %s\n%s · %.1f m · %.0f HP" % [get_instance_id() % 1000, brain.state, target_name, target_distance, health.current]
+		debug_label.text = "%s #%d · %s\n%s · %.1f m · %.0f HP" % [definition.name, get_instance_id() % 1000, brain.state, target_name, target_distance, health.current]
 		update_debug_path()
 
 func face(target: Vector3) -> void:
